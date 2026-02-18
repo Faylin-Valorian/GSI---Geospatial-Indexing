@@ -10,6 +10,6 @@
   "network_label": "I: -> \\\\pagrape\\scanning",
   "default_drive_letter": "I",
   "default_network_target": "\\\\pagrape\\scanning",
-  "sql_connect": "db/modules/network_drive_connect/queries/cmd_shell_connection.sql",
-  "sql_disconnect": "db/modules/network_drive_connect/queries/cmd_shell_disconnection.sql"
+  "sql_connect": "db/modules/network_drive_connect/queries/connect.sql",
+  "sql_disconnect": "db/modules/network_drive_connect/queries/disconnect.sql"
 }

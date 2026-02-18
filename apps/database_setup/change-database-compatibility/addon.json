@@ -1,0 +1,11 @@
+{
+  "id": "change_database_compatibility",
+  "title": "Change Database Compatibility",
+  "description": "Update a database compatibility level (minimum 130).",
+  "type": "change_database_compatibility",
+  "module_key": "setup_tools",
+  "category": "Infrastructure",
+  "nav_group": "database_setup",
+  "nav_group_label": "Database Setup",
+  "sql_apply": "db/modules/database_compatibility/queries/database_compatiblity_level.sql"
+}
