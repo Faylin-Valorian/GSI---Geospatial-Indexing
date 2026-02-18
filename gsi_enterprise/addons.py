@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 import re
+import traceback
 
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, g, jsonify, request, session
 from flask import current_app
 
 from gsi_enterprise.core.decorators import login_required
@@ -70,6 +72,36 @@ def _is_setting_enabled(key: str, default: bool = False) -> bool:
     if not row:
         return default
     return str(row.get("value", "")).strip() == "1"
+
+
+def _log_addon_operation_error(
+    *,
+    addon_id: str,
+    operation: str,
+    error_type: str,
+    error_message: str,
+    details: dict[str, object] | None = None,
+) -> None:
+    try:
+        stack = json.dumps(details or {}, ensure_ascii=True)
+        execute(
+            """
+            INSERT INTO app_error_logs (request_id, path, method, error_type, error_message, stack_trace, user_id, ip_address)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                g.get("request_id", ""),
+                request.path[:512],
+                request.method[:16],
+                f"Addon:{error_type}"[:200],
+                f"[{addon_id}:{operation}] {error_message}",
+                stack,
+                session.get("user_id"),
+                request.headers.get("X-Forwarded-For", request.remote_addr or "")[:64],
+            ),
+        )
+    except Exception:
+        current_app.logger.warning("Failed to write add-on operation error log for addon_id=%s", addon_id)
 
 
 def _log_addon_metadata_strings(app: dict[str, object]) -> None:
@@ -325,8 +357,26 @@ def api_connect_network_drive(addon_id: str):
             drive_letter=drive_letter,
             network_target=network_target,
         )
+        if not ok:
+            _log_addon_operation_error(
+                addon_id=addon_id,
+                operation="connect",
+                error_type="ValidationError",
+                error_message=message,
+                details={
+                    "drive_letter": drive_letter,
+                    "network_target": network_target,
+                },
+            )
         return jsonify({"success": ok, "message": message}), (200 if ok else 400)
     except Exception as exc:
+        _log_addon_operation_error(
+            addon_id=addon_id,
+            operation="connect",
+            error_type=exc.__class__.__name__,
+            error_message=str(exc),
+            details={"traceback": traceback.format_exc()},
+        )
         return jsonify({"success": False, "message": f"Execution failed: {exc}"}), 500
 
 
@@ -348,8 +398,23 @@ def api_disconnect_network_drive(addon_id: str):
 
     try:
         ok, message = execute_network_drive_disconnect(addon, drive_letter=drive_letter)
+        if not ok:
+            _log_addon_operation_error(
+                addon_id=addon_id,
+                operation="disconnect",
+                error_type="ValidationError",
+                error_message=message,
+                details={"drive_letter": drive_letter},
+            )
         return jsonify({"success": ok, "message": message}), (200 if ok else 400)
     except Exception as exc:
+        _log_addon_operation_error(
+            addon_id=addon_id,
+            operation="disconnect",
+            error_type=exc.__class__.__name__,
+            error_message=str(exc),
+            details={"traceback": traceback.format_exc()},
+        )
         return jsonify({"success": False, "message": f"Execution failed: {exc}"}), 500
 
 
@@ -376,6 +441,24 @@ def api_change_database_compatibility(addon_id: str):
             database_name=database_name,
             compatibility_level=int(compatibility_level),
         )
+        if not ok:
+            _log_addon_operation_error(
+                addon_id=addon_id,
+                operation="change_compatibility",
+                error_type="ValidationError",
+                error_message=message,
+                details={
+                    "database_name": database_name,
+                    "compatibility_level": compatibility_level,
+                },
+            )
         return jsonify({"success": ok, "message": message}), (200 if ok else 400)
     except Exception as exc:
+        _log_addon_operation_error(
+            addon_id=addon_id,
+            operation="change_compatibility",
+            error_type=exc.__class__.__name__,
+            error_message=str(exc),
+            details={"traceback": traceback.format_exc()},
+        )
         return jsonify({"success": False, "message": f"Execution failed: {exc}"}), 500

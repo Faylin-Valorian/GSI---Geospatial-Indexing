@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from gsi_enterprise.db import execute, fetch_one
+from gsi_enterprise.db import execute, fetch_all, fetch_one
 
 _ROOT_DIR = Path(__file__).resolve().parents[2]
 _ADDONS_APPS_DIR = _ROOT_DIR / "apps"
@@ -175,6 +175,87 @@ def _get_current_compatibility_level(database_name: str) -> int | None:
         return None
 
 
+def _run_xp_cmdshell(command: str) -> str:
+    escaped = command.replace("'", "''")
+    rows = fetch_all(f"EXEC xp_cmdshell '{escaped}'")
+    if not rows:
+        return ""
+    first_key = next(iter(rows[0].keys()), "")
+    parts = []
+    for row in rows:
+        value = row.get(first_key)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            parts.append(text)
+    return "\n".join(parts)
+
+
+def _xp_cmdshell_sql_output(sql: str) -> str:
+    rows = fetch_all(sql)
+    if not rows:
+        return ""
+    first_key = next(iter(rows[0].keys()), "")
+    parts = []
+    for row in rows:
+        value = row.get(first_key)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            parts.append(text)
+    return "\n".join(parts)
+
+
+def _is_drive_mapped_to_target(drive_letter: str, network_target: str) -> tuple[bool, str]:
+    output = _run_xp_cmdshell(f"net use {drive_letter}:")
+    low = output.lower()
+    if not output:
+        return False, "No status output from net use."
+    if "system error" in low:
+        return False, output
+    if "the network connection could not be found" in low:
+        return False, output
+    if drive_letter.lower() + ":" not in low:
+        return False, output
+    if network_target.strip().lower() not in low:
+        return False, output
+    return True, output
+
+
+def _summarize_output(text: str, max_len: int = 280) -> str:
+    compact = " ".join(str(text or "").split())
+    if len(compact) <= max_len:
+        return compact
+    return compact[: max_len - 3] + "..."
+
+
+def _friendly_connect_error(drive_letter: str, network_target: str, connect_output: str, verify_output: str) -> str:
+    raw = f"{connect_output}\n{verify_output}".lower()
+    prefix = f"Unable to connect {drive_letter}: to {network_target}."
+
+    if "system error 86" in raw or "password is not correct" in raw or "logon failure" in raw:
+        return f"{prefix} Username or password is incorrect."
+    if "system error 1326" in raw or "user name or password is incorrect" in raw:
+        return f"{prefix} Username or password is incorrect."
+    if "system error 53" in raw or "network path was not found" in raw:
+        return f"{prefix} Network path was not found. Verify server/share path and connectivity."
+    if "system error 67" in raw or "network name cannot be found" in raw:
+        return f"{prefix} Network share name was not found."
+    if "system error 85" in raw or "local device name is already in use" in raw:
+        return f"{prefix} Drive letter is already in use. Disconnect it first or choose a different drive letter."
+    if "system error 1219" in raw or "multiple connections to a server" in raw:
+        return f"{prefix} Windows already has a connection to this server with different credentials."
+    if "system error 5" in raw or "access is denied" in raw:
+        return f"{prefix} Access denied. Check account permissions for this share."
+    if "the network connection could not be found" in raw:
+        return f"{prefix} Connection was not established."
+
+    detail = _summarize_output(connect_output or verify_output)
+    return f"{prefix} Connection failed. Details: {detail or 'No error details were returned.'}"
+
+
 def execute_network_drive_connect(
     addon: dict[str, Any], *, username: str, password: str, drive_letter: str, network_target: str
 ) -> tuple[bool, str]:
@@ -208,8 +289,11 @@ def execute_network_drive_connect(
     except Exception:
         return False, "SQL template is invalid for username/password placeholders."
 
-    execute(final_sql)
-    return True, "Network drive connection command executed."
+    connect_output = _xp_cmdshell_sql_output(final_sql)
+    is_connected, detail = _is_drive_mapped_to_target(drive, target)
+    if not is_connected:
+        return False, _friendly_connect_error(drive, target, connect_output, detail)
+    return True, f"Connected {drive}: -> {target}."
 
 
 def execute_network_drive_disconnect(addon: dict[str, Any], *, drive_letter: str) -> tuple[bool, str]:
