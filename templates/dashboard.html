@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}GSI - Geospatial Indexing Dashboard{% endblock %}
+
+{% block content %}
+    <div id="dashboardRoot" data-open-overlay="{{ open_overlay or '' }}"></div>
+    {% include 'components/sidebar.html' %}
+    <main id="map"></main>
+    {% include 'components/module_host.html' %}
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    {% if is_admin %}
+    <script src="{{ url_for('static', filename='js/admin/dashboard.js') }}"></script>
+    {% endif %}
+{% endblock %}

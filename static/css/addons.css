@@ -1,0 +1,125 @@
+.addons-overlay-shell {
+    min-height: 100%;
+    padding: 14px;
+    background: linear-gradient(
+        170deg,
+        color-mix(in oklab, var(--panel-bg) 93%, #04070b),
+        color-mix(in oklab, var(--dock-bg) 93%, #04070b)
+    );
+    color: var(--text-main);
+}
+
+.addons-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.addons-content {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 10px;
+    min-height: 0;
+}
+
+.addons-catalog,
+.addons-workspace {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--panel-bg) 90%, transparent);
+    padding: 10px;
+    min-height: 0;
+}
+
+.addons-catalog {
+    overflow-y: auto;
+}
+
+.addons-list {
+    display: grid;
+    gap: 8px;
+}
+
+.addons-item {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--surface) 74%, var(--panel-bg) 26%);
+    color: var(--text-main);
+    text-align: left;
+    padding: 10px;
+}
+
+.addons-item:hover {
+    background: color-mix(in oklab, var(--accent) 12%, transparent);
+    border-color: color-mix(in oklab, var(--accent) 45%, var(--border-color));
+}
+
+.addons-item.active {
+    background: color-mix(in oklab, var(--accent) 18%, transparent);
+    border-color: color-mix(in oklab, var(--accent) 70%, var(--border-color));
+}
+
+.addons-workspace {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+}
+
+.addons-meta-card {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--surface) 76%, var(--panel-bg) 24%);
+    padding: 12px;
+}
+
+.addons-target {
+    border: 1px dashed color-mix(in oklab, var(--accent) 55%, var(--border-color));
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--accent) 10%, transparent);
+    padding: 8px 10px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 0.9rem;
+}
+
+.addons-empty-state {
+    display: grid;
+    place-items: center;
+    color: var(--text-muted);
+    min-height: 180px;
+}
+
+.addons-banner {
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    font-size: 0.92rem;
+}
+
+.addons-banner-success {
+    border: 1px solid rgba(41, 177, 93, 0.45);
+    background: rgba(41, 177, 93, 0.13);
+    color: #8fe8b1;
+}
+
+.addons-banner-danger {
+    border: 1px solid rgba(221, 83, 83, 0.45);
+    background: rgba(221, 83, 83, 0.13);
+    color: #ffc5c5;
+}
+
+@media (max-width: 991.98px) {
+    .addons-overlay-shell {
+        padding: 10px;
+    }
+
+    .addons-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .addons-content {
+        grid-template-columns: 1fr;
+    }
+}

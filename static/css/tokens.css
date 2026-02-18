@@ -1,0 +1,21 @@
+:root {
+    --dock-bg: rgba(18, 24, 34, 0.96);
+    --panel-bg: rgba(24, 32, 45, 0.98);
+    --text-main: #e8edf4;
+    --text-muted: #99a9ba;
+    --border-color: rgba(148, 170, 193, 0.28);
+    --surface: rgba(34, 45, 62, 0.68);
+    --accent: #2f95d6;
+    --accent-soft: rgba(47, 149, 214, 0.2);
+}
+
+[data-bs-theme="light"] {
+    --dock-bg: rgba(255, 255, 255, 0.95);
+    --panel-bg: rgba(246, 250, 255, 0.98);
+    --text-main: #1d2937;
+    --text-muted: #60758a;
+    --border-color: rgba(104, 124, 145, 0.3);
+    --surface: rgba(234, 241, 248, 0.85);
+    --accent: #1a6e9f;
+    --accent-soft: rgba(26, 110, 159, 0.14);
+}

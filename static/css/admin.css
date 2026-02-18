@@ -1,0 +1,89 @@
+.admin-overlay-shell {
+    min-height: 100%;
+    padding: 14px;
+    background: linear-gradient(180deg, color-mix(in oklab, var(--panel-bg) 94%, #000), color-mix(in oklab, var(--dock-bg) 95%, #000));
+    color: var(--text-main);
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.admin-tabs {
+    border-bottom-color: var(--border-color);
+    margin-bottom: 10px;
+}
+
+.admin-tabs .nav-link {
+    color: var(--text-muted);
+    border-color: transparent;
+}
+
+.admin-tabs .nav-link.active {
+    color: var(--text-main);
+    background: color-mix(in oklab, var(--accent) 12%, transparent);
+    border-color: var(--border-color);
+}
+
+.admin-content {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--panel-bg) 92%, transparent);
+    padding: 12px;
+}
+
+.admin-content .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-main);
+    --bs-table-border-color: var(--border-color);
+    --bs-table-hover-bg: color-mix(in oklab, var(--accent) 12%, transparent);
+}
+
+.admin-content .table thead th {
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+}
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.admin-card,
+.admin-chip {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px;
+    background: color-mix(in oklab, var(--surface) 74%, var(--panel-bg) 26%);
+}
+
+.overlay-action-btn.is-active {
+    --bs-btn-color: #fff;
+    --bs-btn-border-color: color-mix(in oklab, var(--accent) 75%, var(--border-color));
+    --bs-btn-bg: color-mix(in oklab, var(--accent) 36%, transparent);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: color-mix(in oklab, var(--accent) 50%, transparent);
+    --bs-btn-hover-border-color: color-mix(in oklab, var(--accent) 90%, var(--border-color));
+}
+
+@media (max-width: 991.98px) {
+    .admin-overlay-shell {
+        padding: 10px;
+    }
+
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

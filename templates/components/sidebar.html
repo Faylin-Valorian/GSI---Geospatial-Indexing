@@ -1,0 +1,88 @@
+<aside class="sidebar-dock" aria-label="Primary navigation">
+    <button class="dock-tab tab-nav active" type="button" data-panel-target="navPanel">
+        Navigation
+    </button>
+
+    <button class="dock-tab tab-icon" type="button" data-panel-target="settingsPanel" aria-label="Settings panel">
+        <i class="bi bi-gear-fill"></i>
+    </button>
+
+    <div class="dock-spacer"></div>
+
+    <button id="themeToggle" class="dock-theme" type="button" aria-label="Toggle color theme">
+        <i id="themeIcon" class="bi bi-sun-fill"></i>
+    </button>
+</aside>
+
+<section id="navPanel" class="menu-panel open" aria-label="Navigation panel">
+    <div class="menu-content">
+        <h5 class="mb-1 fw-bold">GSI - Geospatial Indexing</h5>
+        <p class="text-muted small mb-4">Core dashboard and administration shell.</p>
+
+        <div class="nav-group">
+            <div class="nav-group-title">Navigation</div>
+            {% if current_user and can_access('admin_dashboard') %}
+            <button class="btn btn-outline-secondary text-start w-100" type="button" data-module-open="adminOverlay">
+                <i class="bi bi-shield-lock me-2"></i>Admin Overlay
+            </button>
+            {% endif %}
+            {% if current_user and can_access('setup_tools') %}
+            <button class="btn btn-outline-secondary text-start w-100" type="button" data-module-open="addonsOverlay" data-addon-group="database_setup">
+                <i class="bi bi-database-gear me-2"></i>Database Setup
+            </button>
+            <button class="btn btn-outline-secondary text-start w-100" type="button" data-module-open="addonsOverlay" data-addon-group="edata_setup">
+                <i class="bi bi-diagram-3 me-2"></i>eData Setup
+            </button>
+            <button class="btn btn-outline-secondary text-start w-100" type="button" data-module-open="addonsOverlay" data-addon-group="keli_setup">
+                <i class="bi bi-sliders2 me-2"></i>Keli Setup
+            </button>
+            <button class="btn btn-outline-secondary text-start w-100" type="button" data-module-open="addonsOverlay" data-addon-group="processing_tools">
+                <i class="bi bi-tools me-2"></i>Processing Tools
+            </button>
+            <button class="btn btn-outline-secondary text-start w-100" type="button" data-module-open="addonsOverlay" data-addon-group="edata_cleanup">
+                <i class="bi bi-brush me-2"></i>eData Cleanup
+            </button>
+            <button class="btn btn-outline-secondary text-start w-100" type="button" data-module-open="addonsOverlay" data-addon-group="keli_linkup">
+                <i class="bi bi-link-45deg me-2"></i>Keli Linkup
+            </button>
+            <button class="btn btn-outline-secondary text-start w-100" type="button" data-module-open="addonsOverlay" data-addon-group="extra_tools">
+                <i class="bi bi-plug me-2"></i>App Add-ons
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section id="settingsPanel" class="menu-panel" aria-label="Settings panel">
+    <div class="menu-content">
+        <h5 class="mb-2 fw-bold">Settings</h5>
+        <p class="text-muted small mb-0">Theme toggle is available on the left dock.</p>
+    </div>
+</section>
+
+<section id="sessionHud" class="session-hud" aria-label="Session footer">
+    <button id="sessionHudToggle" class="session-hud-toggle" type="button" aria-expanded="false">
+        {% if current_user %}{{ current_user.username }}{% else %}Guest{% endif %}
+    </button>
+    <div id="sessionHudPanel" class="session-hud-panel">
+        <div class="session-hud-content">
+            {% if current_user %}
+                <div class="admin-chip mb-2">
+                    <div class="fw-semibold">{{ current_user.username }}</div>
+                    <div class="small text-muted">{{ current_user.email }}</div>
+                    <div class="small text-muted text-uppercase">Role: {{ current_user.role }}</div>
+                </div>
+                <form method="post" action="{{ url_for('auth.logout_submit') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-outline-danger text-start w-100" type="submit">
+                        <i class="bi bi-box-arrow-right me-2"></i>Sign Out
+                    </button>
+                </form>
+            {% else %}
+                <a class="btn btn-outline-secondary text-start w-100" href="{{ url_for('auth.login') }}">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</section>

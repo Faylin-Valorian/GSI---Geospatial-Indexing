@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Register | GSI - Geospatial Indexing{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card">
+        <h3 class="mb-1">Create Account</h3>
+        <p class="text-muted mb-4">Register to access GSI - Geospatial Indexing modules.</p>
+
+        <form method="post" action="{{ url_for('auth.register_submit') }}" class="d-grid gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label class="form-label">Username</label>
+                <input class="form-control" type="text" name="username" required>
+            </div>
+            <div>
+                <label class="form-label">Email</label>
+                <input class="form-control" type="email" name="email" required>
+            </div>
+            <div>
+                <label class="form-label">Password</label>
+                <input class="form-control" type="password" name="password" required>
+            </div>
+            <button class="btn btn-primary" type="submit">Register</button>
+        </form>
+
+        <div class="auth-links mt-4">
+            <a href="{{ url_for('auth.login') }}">Back to login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{
+  "id": "network_drive_connect",
+  "title": "Connect to Network Drive",
+  "description": "Execute SQL-backed network drive connect/disconnect commands for the I: mapping.",
+  "type": "network_drive_connect",
+  "module_key": "setup_tools",
+  "category": "Infrastructure",
+  "nav_group": "database_setup",
+  "nav_group_label": "Database Setup",
+  "network_label": "I: -> \\\\pagrape\\scanning",
+  "default_drive_letter": "I",
+  "default_network_target": "\\\\pagrape\\scanning",
+  "sql_connect": "db/modules/network_drive_connect/queries/cmd_shell_connection.sql",
+  "sql_disconnect": "db/modules/network_drive_connect/queries/cmd_shell_disconnection.sql"
+}

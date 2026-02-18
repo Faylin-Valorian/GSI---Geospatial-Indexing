@@ -1,0 +1,239 @@
+<div class="admin-overlay-shell h-100 d-flex flex-column">
+    <header class="admin-header" data-overlay-drag-handle="adminOverlay">
+        <div>
+            <h4 class="mb-1">Admin Dashboard</h4>
+            <p class="text-muted mb-0">Account controls, domain policies, and module access governance.</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-outline-secondary btn-sm overlay-action-btn" type="button" data-overlay-action="float" data-overlay-target="adminOverlay" title="Float / Dock">
+                <i class="bi bi-arrows-move"></i>
+            </button>
+            <button class="btn btn-outline-secondary btn-sm overlay-action-btn" type="button" data-overlay-action="expand" data-overlay-target="adminOverlay" title="Expand / Restore">
+                <i class="bi bi-arrows-fullscreen"></i>
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-overlay-close="adminOverlay">
+                <i class="bi bi-x-lg me-1"></i>Close
+            </button>
+        </div>
+    </header>
+
+    <div class="admin-tabs nav nav-tabs" role="tablist">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-users" type="button">Users</button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-domains" type="button">Domain Restrictions</button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-email" type="button">Email Settings</button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-images" type="button">Image Sources</button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-geography" type="button">Geography</button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-access" type="button">Access Controls</button>
+    </div>
+
+    <div class="tab-content admin-content flex-grow-1 overflow-auto">
+        <section id="tab-users" class="tab-pane fade show active">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Active</th>
+                            <th>Verified</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUsersBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="tab-domains" class="tab-pane fade">
+            <div class="admin-grid">
+                <div class="admin-card">
+                    <h6 class="mb-2">Registration Restriction</h6>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="restrictDomainsToggle">
+                        <label class="form-check-label" for="restrictDomainsToggle">Allow registration only from approved domains</label>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <h6 class="mb-2">Add Domain</h6>
+                    <div class="input-group">
+                        <input id="newDomainInput" class="form-control" placeholder="example.com">
+                        <button id="addDomainBtn" class="btn btn-primary" type="button">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive mt-3">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Domain</th>
+                            <th>Enabled</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="domainPolicyBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="tab-email" class="tab-pane fade">
+            <div class="admin-card">
+                <h6 class="mb-2">Verification Sender Address</h6>
+                <p class="small text-muted mb-2">This address is used as the From address for verification code emails.</p>
+                <div class="input-group mb-2">
+                    <input id="verificationFromInput" class="form-control" type="email" placeholder="noreply@yourdomain.com">
+                    <button id="saveVerificationFromBtn" class="btn btn-primary" type="button">Save</button>
+                </div>
+                <div id="verificationFromStatus" class="small text-muted"></div>
+            </div>
+        </section>
+
+        <section id="tab-images" class="tab-pane fade">
+            <div class="admin-grid">
+                <div class="admin-card">
+                    <h6 class="mb-2">Add Image Source</h6>
+                    <div class="mb-2">
+                        <label class="form-label small text-muted">Source Key</label>
+                        <input id="imageSourceKeyInput" class="form-control" placeholder="county_share">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small text-muted">Root Path</label>
+                        <input id="imageSourceRootInput" class="form-control" placeholder="D:\\CountyImages\\">
+                    </div>
+                    <button id="addImageSourceBtn" class="btn btn-primary" type="button">Add Source</button>
+                </div>
+
+                <div class="admin-card">
+                    <h6 class="mb-2">Usage</h6>
+                    <p class="small text-muted mb-1">Use secure image streaming endpoint in modules:</p>
+                    <code>/api/images/stream?source=&lt;source_key&gt;&amp;path=&lt;relative_path&gt;</code>
+                </div>
+            </div>
+
+            <div class="table-responsive mt-3">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Source Key</th>
+                            <th>Root Path</th>
+                            <th>Enabled</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="imageSourcesBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="tab-geography" class="tab-pane fade">
+            <div class="admin-card">
+                <div class="nav nav-pills nav-fill gap-2 mb-3" role="tablist">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#geo-subtab-states" type="button">States</button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#geo-subtab-counties" type="button">Counties</button>
+                </div>
+
+                <div class="tab-content">
+                    <div id="geo-subtab-states" class="tab-pane fade show active">
+                        <h6 class="mb-2">Active States</h6>
+                        <p class="small text-muted mb-2">Enabled states are shown with a clear highlight overlay on the map.</p>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>State</th>
+                                        <th>Active</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="geoStatesBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="geo-subtab-counties" class="tab-pane fade">
+                        <h6 class="mb-2">County Catalog</h6>
+                        <p class="small text-muted mb-2">Filter counties by active state and toggle them for red overlays.</p>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <select id="geoCountyFilterStateSelect" class="form-select">
+                                    <option value="">All states</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-grid">
+                                <button id="geoCountyFilterBtn" class="btn btn-outline-secondary" type="button">Filter</button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>County</th>
+                                        <th>State</th>
+                                        <th>Active</th>
+                                        <th>Active Job</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="geoCountiesBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-access" class="tab-pane fade">
+            <p class="text-muted small mb-3">Role-based module access matrix.</p>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Module</th>
+                            <th>Can Access</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accessControlBody"></tbody>
+                </table>
+            </div>
+
+            <div class="admin-grid mt-3">
+                <div class="admin-card">
+                    <h6 class="mb-2">User Access Override</h6>
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <input id="userAccessUserId" class="form-control" type="number" min="1" placeholder="User ID">
+                        </div>
+                        <div class="col-md-5">
+                            <input id="userAccessModuleKey" class="form-control" placeholder="module_key (e.g. reporting)">
+                        </div>
+                        <div class="col-md-2">
+                            <select id="userAccessCanAccess" class="form-select">
+                                <option value="1">Allow</option>
+                                <option value="0">Deny</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button id="saveUserAccessOverrideBtn" class="btn btn-primary" type="button">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive mt-3">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Module</th>
+                            <th>Can Access</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userAccessOverridesBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>

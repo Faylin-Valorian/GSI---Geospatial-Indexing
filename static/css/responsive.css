@@ -1,0 +1,109 @@
+@media (max-width: 1199.98px) {
+    .menu-panel.open,
+    .menu-content {
+        width: 250px;
+    }
+
+    .module-overlay {
+        width: min(700px, calc(100vw - 78px));
+    }
+}
+
+@media (max-width: 991.98px) {
+    .sidebar-dock {
+        top: auto;
+        right: 0;
+        bottom: 0;
+        width: auto;
+        height: 56px;
+        flex-direction: row;
+        border-right: 0;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .tab-nav {
+        writing-mode: horizontal-tb;
+        min-height: 56px;
+        padding: 0 12px;
+        border-bottom: 0;
+        border-right: 1px solid var(--border-color);
+    }
+
+    .tab-icon,
+    .dock-theme {
+        width: 56px;
+        border-bottom: 0;
+        border-right: 1px solid var(--border-color);
+    }
+
+    .dock-spacer {
+        display: none;
+    }
+
+    .menu-panel {
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 56px;
+        width: 100%;
+        height: 0;
+        border-right: 0;
+        border-top: 1px solid var(--border-color);
+        transition: height 220ms ease;
+    }
+
+    .menu-panel.open {
+        width: 100%;
+        height: min(74vh, 560px);
+    }
+
+    .menu-content {
+        width: 100%;
+        padding: 14px;
+    }
+
+    .module-overlay {
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 56px;
+        width: 100%;
+        height: min(82vh, 720px);
+        border-left: 0;
+        border-top: 1px solid var(--border-color);
+        border-radius: 14px 14px 0 0;
+        transform: translateY(102%);
+    }
+
+    .module-overlay.open {
+        transform: translateY(0);
+    }
+
+    .module-overlay.floating,
+    .module-overlay.maximized {
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 56px;
+        width: 100%;
+        height: min(82vh, 720px);
+        min-width: 0;
+        min-height: 0;
+        border-radius: 14px 14px 0 0;
+        resize: none;
+    }
+
+    .leaflet-bottom {
+        margin-bottom: 56px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .menu-panel.open {
+        height: 78vh;
+    }
+
+    .module-overlay {
+        height: 85vh;
+    }
+}

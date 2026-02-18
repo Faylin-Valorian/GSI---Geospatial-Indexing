@@ -1,0 +1,45 @@
+<div class="addons-overlay-shell h-100 d-flex flex-column">
+    <header class="addons-header" data-overlay-drag-handle="addonsOverlay">
+        <div>
+            <h4 class="mb-1">Add-on Apps</h4>
+            <p class="text-muted mb-0">Modular app launcher. Add/remove app folders to control UI visibility.</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-outline-secondary btn-sm overlay-action-btn" type="button" data-overlay-action="float" data-overlay-target="addonsOverlay" title="Float / Dock">
+                <i class="bi bi-arrows-move"></i>
+            </button>
+            <button class="btn btn-outline-secondary btn-sm overlay-action-btn" type="button" data-overlay-action="expand" data-overlay-target="addonsOverlay" title="Expand / Restore">
+                <i class="bi bi-arrows-fullscreen"></i>
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" type="button" data-overlay-close="addonsOverlay">
+                <i class="bi bi-x-lg me-1"></i>Close
+            </button>
+        </div>
+    </header>
+
+    <section class="addons-content flex-grow-1">
+        <aside class="addons-catalog">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Installed Apps</h6>
+                <button id="addonAppsRefreshBtn" class="btn btn-outline-secondary btn-sm" type="button">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+            </div>
+            <div id="addonAppsGroupLabel" class="small text-muted mb-1">Extra Tools</div>
+            <div id="addonAppsCount" class="small text-muted mb-2"></div>
+            <div id="addonAppsList" class="addons-list"></div>
+        </aside>
+
+        <main class="addons-workspace">
+            <div class="addons-meta-card mb-2">
+                <h5 id="addonAppTitle" class="mb-1">Select an app</h5>
+                <p id="addonAppDescription" class="text-muted mb-1">Choose an app from the list to configure and run.</p>
+                <div id="addonAppMeta" class="small text-muted"></div>
+            </div>
+
+            <section id="addonAppWorkspace" class="addons-meta-card addons-empty-state">
+                Select an app to continue.
+            </section>
+        </main>
+    </section>
+</div>

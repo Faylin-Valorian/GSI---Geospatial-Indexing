@@ -1,0 +1,12 @@
+<div id="moduleHost" class="module-host" aria-live="polite">
+    {% if current_user and can_access('setup_tools') %}
+    <section id="addonsOverlay" class="module-overlay" aria-label="Add-on apps overlay">
+        {% include 'addons/partials/panel.html' %}
+    </section>
+    {% endif %}
+    {% if is_admin %}
+    <section id="adminOverlay" class="module-overlay" aria-label="Admin module overlay">
+        {% include 'admin/partials/panel.html' %}
+    </section>
+    {% endif %}
+</div>

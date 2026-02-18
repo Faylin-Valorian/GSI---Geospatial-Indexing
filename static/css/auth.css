@@ -1,0 +1,60 @@
+.flash-stack {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 4000;
+    width: min(460px, calc(100vw - 20px));
+    display: grid;
+    gap: 8px;
+}
+
+.auth-shell {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: radial-gradient(circle at 12% 8%, color-mix(in oklab, var(--accent) 18%, transparent), transparent 50%),
+                linear-gradient(180deg, color-mix(in oklab, var(--panel-bg) 92%, #000), color-mix(in oklab, var(--dock-bg) 96%, #000));
+}
+
+.auth-card {
+    width: min(460px, 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background: color-mix(in oklab, var(--panel-bg) 90%, transparent);
+    padding: 22px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+}
+
+.auth-card .form-control {
+    background: color-mix(in oklab, var(--surface) 75%, var(--panel-bg) 25%);
+    color: var(--text-main);
+    border-color: var(--border-color);
+}
+
+.auth-card .form-control:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.2rem var(--accent-soft);
+}
+
+.auth-links {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.auth-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.auth-links a:hover {
+    color: var(--text-main);
+    text-decoration: underline;
+}
+
+@media (max-width: 575.98px) {
+    .auth-card {
+        padding: 16px;
+    }
+}

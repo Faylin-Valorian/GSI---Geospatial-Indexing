@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard | GSI - Geospatial Indexing{% endblock %}
+
+{% block content %}
+<div class="admin-overlay-shell" style="max-width: 1100px; margin: 20px auto; border: 1px solid var(--border-color); border-radius: 12px;">
+    {% include 'admin/partials/panel.html' %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/admin/dashboard.js') }}"></script>
+{% endblock %}
