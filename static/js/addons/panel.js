@@ -5,12 +5,19 @@
         }
     }
 
+    async function popupConfirm(message, title = "Confirm") {
+        if (window.GSICore && typeof window.GSICore.popupConfirm === "function") {
+            return window.GSICore.popupConfirm(message, { title, confirmText: "Confirm", cancelText: "Cancel" });
+        }
+        return window.confirm(message);
+    }
+
     function csrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute("content") || "" : "";
     }
 
-    async function api(path, method = "GET", payload = null) {
+    async function api(path, method = "GET", payload = null, context = {}) {
         const opts = { method, headers: { "Content-Type": "application/json" } };
         if (method !== "GET") opts.headers["X-CSRF-Token"] = csrfToken();
         if (payload !== null) opts.body = JSON.stringify(payload);
@@ -22,7 +29,7 @@
         } catch (_) {}
         if (!res.ok || data.success === false) {
             const err = new Error(data.message || `Request failed (${res.status})`);
-            reportDebug(err, { source: "addons_api", path, method, status: res.status });
+            reportDebug(err, { source: "addons_api", path, method, status: res.status, ...context });
             throw err;
         }
         return data;
@@ -146,6 +153,7 @@
                 <div class="col-12">
                     <label class="form-label small text-muted">Target</label>
                     <div class="addons-target">${esc(app.network_label || "Network Drive")}</div>
+                    <div id="networkDriveStatusNote" class="form-text mt-2">Not connected.</div>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label" for="networkDriveLetter">Drive Letter</label>
@@ -180,19 +188,46 @@
         const targetInput = document.getElementById("networkDriveTarget");
         const usernameInput = document.getElementById("networkDriveUsername");
         const passwordInput = document.getElementById("networkDrivePassword");
-        if (!connectBtn || !disconnectBtn || !driveInput || !targetInput || !usernameInput || !passwordInput) return;
+        const statusNote = document.getElementById("networkDriveStatusNote");
+        if (!connectBtn || !disconnectBtn || !driveInput || !targetInput || !usernameInput || !passwordInput || !statusNote) return;
+
+        function setConnectionState(isConnected, drive, target) {
+            if (isConnected) {
+                connectBtn.classList.remove("btn-primary");
+                connectBtn.classList.add("btn-outline-secondary");
+                disconnectBtn.classList.remove("btn-outline-secondary");
+                disconnectBtn.classList.add("btn-primary");
+                statusNote.textContent = `Connected: ${drive}: -> ${target}`;
+                return;
+            }
+            connectBtn.classList.remove("btn-outline-secondary");
+            connectBtn.classList.add("btn-primary");
+            disconnectBtn.classList.remove("btn-primary");
+            disconnectBtn.classList.add("btn-outline-secondary");
+            statusNote.textContent = "Not connected.";
+        }
+
+        setConnectionState(false, "", "");
 
         connectBtn.addEventListener("click", async () => {
             connectBtn.disabled = true;
             try {
+                const drive = driveInput.value.trim().toUpperCase();
+                const target = targetInput.value.trim();
                 const payload = await api(`/api/addons/apps/${encodeURIComponent(app.id)}/connect`, "POST", {
-                    drive_letter: driveInput.value.trim().toUpperCase(),
-                    network_target: targetInput.value.trim(),
+                    drive_letter: drive,
+                    network_target: target,
                     username: usernameInput.value.trim(),
                     password: passwordInput.value,
+                }, {
+                    addon_id: app.id,
+                    addon_type: app.type,
+                    addon_action: "connect",
                 });
-                setBanner(payload.message || "Connection command executed.", "success");
+                setConnectionState(true, drive, target);
+                setBanner(payload.message || `Connected to ${drive}: -> ${target}`, "success");
             } catch (err) {
+                setConnectionState(false, "", "");
                 setBanner(err.message, "danger");
             } finally {
                 connectBtn.disabled = false;
@@ -202,10 +237,16 @@
         disconnectBtn.addEventListener("click", async () => {
             disconnectBtn.disabled = true;
             try {
+                const drive = driveInput.value.trim().toUpperCase();
                 const payload = await api(`/api/addons/apps/${encodeURIComponent(app.id)}/disconnect`, "POST", {
-                    drive_letter: driveInput.value.trim().toUpperCase(),
+                    drive_letter: drive,
+                }, {
+                    addon_id: app.id,
+                    addon_type: app.type,
+                    addon_action: "disconnect",
                 });
-                setBanner(payload.message || "Disconnect command executed.", "success");
+                setConnectionState(false, "", "");
+                setBanner(payload.message || `Disconnected ${drive}:`, "success");
             } catch (err) {
                 setBanner(err.message, "danger");
             } finally {
@@ -271,9 +312,23 @@
         applyBtn.addEventListener("click", async () => {
             applyBtn.disabled = true;
             try {
+                const dbName = dbInput.value.trim();
+                const targetLevel = Number(levelSelect.value);
+                const confirmed = await popupConfirm(
+                    `Database: ${dbName || "(empty)"}\nTarget level: ${targetLevel}`,
+                    "Confirm compatibility update?"
+                );
+                if (!confirmed) {
+                    setBanner("Compatibility update canceled.", "info");
+                    return;
+                }
                 const payload = await api(`/api/addons/apps/${encodeURIComponent(app.id)}/change-compatibility`, "POST", {
-                    database_name: dbInput.value.trim(),
-                    compatibility_level: Number(levelSelect.value),
+                    database_name: dbName,
+                    compatibility_level: targetLevel,
+                }, {
+                    addon_id: app.id,
+                    addon_type: app.type,
+                    addon_action: "change_compatibility",
                 });
                 setBanner(payload.message || "Compatibility updated.", "success");
             } catch (err) {
@@ -319,6 +374,9 @@
         await api("/api/addons/apps/order", "POST", {
             group: state.activeGroup,
             app_ids: orderedIds,
+        }, {
+            addon_action: "reorder_apps",
+            nav_group: state.activeGroup,
         });
     }
 
@@ -359,7 +417,10 @@
     }
 
     async function loadApps() {
-        const payload = await api("/api/addons/apps");
+        const payload = await api("/api/addons/apps", "GET", null, {
+            addon_action: "load_apps",
+            nav_group: state.activeGroup,
+        });
         state.canManageOrder = Boolean(payload.can_manage_order);
         state.allApps = payload.apps || [];
         applyActiveGroup(state.activeGroup);

@@ -75,7 +75,15 @@ python app.py
 - If an app folder is added, it appears after clicking Refresh in the Add-on Apps panel.
 - Implemented apps:
   - `Connect to Network Drive` using `db/modules/network_drive_connect/queries/*`
-  - `Change Database Compatibility` using `db/modules/database_compatibility/queries/AlterKRSCompatibilityLevel.sql`
+  - `Change Database Compatibility` using `db/modules/database_compatibility/queries/database_compatiblity_level.sql`
+
+### Core UI helpers for app builders
+
+- Use `window.GSICore.popupAlert(message, { title })` instead of browser `alert()`.
+- Use `window.GSICore.popupConfirm(message, { title, confirmText, cancelText })` instead of browser `confirm()`.
+- Use `window.GSICore.popupPrompt(message, { title, inputType, placeholder, defaultValue })` instead of browser `prompt()`.
+- Use `window.GSICore.openImageViewer({ source, path, title, alt, meta })` to open images from `/api/images/stream`.
+- Use `window.GSICore.imageStreamUrl(source, path)` when you only need the stream URL.
 
 ## Secure image strategy
 

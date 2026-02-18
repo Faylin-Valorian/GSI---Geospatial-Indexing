@@ -7,6 +7,21 @@
         }
     }
 
+    async function popupAlert(message, title = "Notice") {
+        if (window.GSICore && typeof window.GSICore.popupAlert === "function") {
+            return window.GSICore.popupAlert(message, { title });
+        }
+        window.alert(message);
+        return true;
+    }
+
+    async function popupPrompt(message, options = {}) {
+        if (window.GSICore && typeof window.GSICore.popupPrompt === "function") {
+            return window.GSICore.popupPrompt(message, options);
+        }
+        return window.prompt(message, options.defaultValue || "");
+    }
+
     function csrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute("content") || "" : "";
@@ -242,15 +257,25 @@
                     await loadUsers();
                 }
                 if (action === "reset") {
-                    const newPassword = window.prompt("Enter a new password (minimum 12 characters):", "");
+                    const newPassword = await popupPrompt("Enter a new password (minimum 12 characters):", {
+                        title: "Reset Password",
+                        inputType: "password",
+                        confirmText: "Continue",
+                        cancelText: "Cancel",
+                    });
                     if (!newPassword) return;
-                    const confirmPassword = window.prompt("Re-enter the new password:", "");
+                    const confirmPassword = await popupPrompt("Re-enter the new password:", {
+                        title: "Reset Password",
+                        inputType: "password",
+                        confirmText: "Submit",
+                        cancelText: "Cancel",
+                    });
                     if (newPassword !== confirmPassword) {
-                        alert("Passwords do not match.");
+                        await popupAlert("Passwords do not match.", "Reset Password");
                         return;
                     }
                     await api(`/admin/api/users/${target.dataset.id}/reset-password`, "POST", { new_password: newPassword });
-                    alert("Password updated.");
+                    await popupAlert("Password updated.", "Reset Password");
                 }
                 if (action === "toggle-domain") {
                     await api(`/admin/api/domains/${target.dataset.id}/toggle`, "POST", { is_enabled: target.dataset.value === "true" });
@@ -282,7 +307,7 @@
                     document.dispatchEvent(new Event("map:overlay-data-changed"));
                 }
             } catch (err) {
-                alert(err.message);
+                await popupAlert(err.message, "Action Failed");
             }
         });
 
@@ -320,7 +345,7 @@
                     document.dispatchEvent(new Event("map:overlay-data-changed"));
                 }
             } catch (err) {
-                alert(err.message);
+                await popupAlert(err.message, "Action Failed");
             }
         });
 
@@ -346,7 +371,7 @@
                     moduleInput.value = "";
                     await loadUserAccessOverrides();
                 } catch (err) {
-                    alert(err.message);
+                    await popupAlert(err.message, "Save Failed");
                 }
             });
         }
@@ -363,7 +388,7 @@
                     input.value = "";
                     await loadDomains();
                 } catch (err) {
-                    alert(err.message);
+                    await popupAlert(err.message, "Save Failed");
                 }
             });
         }
@@ -407,7 +432,7 @@
                     rootInput.value = "";
                     await loadImageSources();
                 } catch (err) {
-                    alert(err.message);
+                    await popupAlert(err.message, "Save Failed");
                 }
             });
         }
@@ -454,7 +479,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         if (document.getElementById("adminUsersBody")) {
-            initialize().catch((err) => alert(err.message));
+            initialize().catch((err) => popupAlert(err.message, "Initialization Failed"));
         }
     });
 })();

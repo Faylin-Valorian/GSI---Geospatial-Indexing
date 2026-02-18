@@ -56,6 +56,21 @@
         }
     }
 
+    async function popupAlert(message, title = "Notice") {
+        if (window.GSICore && typeof window.GSICore.popupAlert === "function") {
+            return window.GSICore.popupAlert(message, { title });
+        }
+        window.alert(message);
+        return true;
+    }
+
+    async function popupConfirm(message, title = "Confirm") {
+        if (window.GSICore && typeof window.GSICore.popupConfirm === "function") {
+            return window.GSICore.popupConfirm(message, { title, confirmText: "Confirm", cancelText: "Cancel" });
+        }
+        return window.confirm(message);
+    }
+
     function csrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute("content") || "" : "";
@@ -366,7 +381,7 @@
                     try {
                         await saveCountyWork(countyFips, root);
                     } catch (err) {
-                        alert(err.message || "Unable to save notes.");
+                        await popupAlert(err.message || "Unable to save notes.", "Save Failed");
                     }
                 }, 450);
             });
@@ -378,7 +393,7 @@
                 try {
                     await saveCountyWork(countyFips, root);
                 } catch (err) {
-                    alert(err.message || "Unable to save notes.");
+                    await popupAlert(err.message || "Unable to save notes.", "Save Failed");
                 }
             });
         }
@@ -391,10 +406,11 @@
                 const field = toggleBtn.dataset.toggleField;
                 const next = toggleBtn.dataset.on !== "1";
                 if (field === "is_split_job") {
-                    const ok = window.confirm(
+                    const ok = await popupConfirm(
                         next
                             ? "Enable Split Image Job for this county?"
-                            : "Disable Split Image Job for this county?"
+                            : "Disable Split Image Job for this county?",
+                        "Confirm Split Image Job"
                     );
                     if (!ok) return;
                 }
@@ -421,7 +437,7 @@
                     await saveCountyWork(countyFips, root);
                     document.dispatchEvent(new Event("map:overlay-data-changed"));
                 } catch (err) {
-                    alert(err.message || "Unable to save county workflow.");
+                    await popupAlert(err.message || "Unable to save county workflow.", "Save Failed");
                 }
                 return;
             }
@@ -434,7 +450,10 @@
                 if (action === "complete-county") {
                     const isCompleted = target.dataset.isCompleted === "1";
                     if (isCompleted) {
-                        const ok = window.confirm("If you proceed, this county will be reopened and others can activate the job and edit it again. Continue?");
+                        const ok = await popupConfirm(
+                            "If you proceed, this county will be reopened and others can activate the job and edit it again. Continue?",
+                            "Reopen County?"
+                        );
                         if (!ok) return;
                     }
                     await fetchJson(`/api/counties/${countyFips}/work/complete`, {
@@ -446,7 +465,7 @@
                     document.dispatchEvent(new Event("map:overlay-data-changed"));
                 }
             } catch (err) {
-                alert(err.message || "Request failed.");
+                await popupAlert(err.message || "Request failed.", "Request Failed");
             }
         });
     }
@@ -465,7 +484,7 @@
                     try {
                         await openCountyPopup(countyFips, event.latlng);
                     } catch (err) {
-                        alert(err.message || "Unable to load county details.");
+                        await popupAlert(err.message || "Unable to load county details.", "Load Failed");
                     }
                 });
             },

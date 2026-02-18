@@ -36,55 +36,28 @@
         ].join("\n");
     }
 
-    async function copyText(text) {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(text);
+    let lastPopupSignature = "";
+    let lastPopupAt = 0;
+
+    async function show(details) {
+        const now = Date.now();
+        if (details === lastPopupSignature && now - lastPopupAt < 2000) {
             return;
         }
-        const temp = document.createElement("textarea");
-        temp.value = text;
-        document.body.appendChild(temp);
-        temp.select();
-        document.execCommand("copy");
-        temp.remove();
-    }
+        lastPopupSignature = details;
+        lastPopupAt = now;
 
-    function ensureToast() {
-        let root = document.getElementById("debugToast");
-        if (root) return root;
-        root = document.createElement("div");
-        root.id = "debugToast";
-        root.className = "debug-toast";
-        root.style.display = "none";
-        root.innerHTML = `
-            <div class="debug-toast-head">
-                <div class="debug-toast-title">Debug Error</div>
-                <button type="button" class="btn btn-sm btn-outline-light" data-debug-close>Close</button>
-            </div>
-            <div class="debug-toast-body" id="debugToastBody"></div>
-            <div class="debug-toast-actions">
-                <button type="button" class="btn btn-sm btn-outline-light" data-debug-copy>Copy Error</button>
-            </div>
-        `;
-        document.body.appendChild(root);
-        root.querySelector("[data-debug-close]").addEventListener("click", () => {
-            root.style.display = "none";
-        });
-        root.querySelector("[data-debug-copy]").addEventListener("click", async () => {
-            const body = document.getElementById("debugToastBody");
-            if (!body) return;
-            try {
-                await copyText(body.textContent || "");
-            } catch (_) {}
-        });
-        return root;
-    }
-
-    function show(details) {
-        const root = ensureToast();
-        const body = document.getElementById("debugToastBody");
-        if (body) body.textContent = details;
-        root.style.display = "block";
+        if (window.GSIPopup && typeof window.GSIPopup.alert === "function") {
+            await window.GSIPopup.alert({
+                title: "Debug Error",
+                message: details,
+                confirmText: "Close",
+                copyText: details,
+                copyLabel: "Copy Error",
+            });
+            return;
+        }
+        console.error("Debug Error:", details);
     }
 
     async function logClientError(error, context) {
@@ -110,7 +83,7 @@
     function reportError(error, context = {}) {
         const details = buildDetails(error, context);
         if (state.enabled) {
-            show(details);
+            show(details).catch(() => {});
         }
         logClientError(error, context);
     }
@@ -136,10 +109,6 @@
         },
         setEnabled(enabled) {
             state.enabled = !!enabled;
-            if (!state.enabled) {
-                const root = document.getElementById("debugToast");
-                if (root) root.style.display = "none";
-            }
         },
         reportError,
     };

@@ -1,0 +1,56 @@
+.gsi-popup-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2900;
+    background: rgba(8, 11, 16, 0.58);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+}
+
+.gsi-popup-backdrop.is-open {
+    display: flex;
+}
+
+.gsi-popup-card {
+    width: min(520px, 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--panel-bg) 96%, #05070a);
+    color: var(--text-main);
+    box-shadow: 0 16px 42px rgba(0, 0, 0, 0.42);
+}
+
+.gsi-popup-head {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.gsi-popup-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.gsi-popup-body {
+    padding: 12px 14px;
+    color: var(--text-main);
+}
+
+.gsi-popup-message {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.gsi-popup-input-wrap {
+    margin-top: 10px;
+}
+
+.gsi-popup-actions {
+    padding: 10px 14px 14px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}

@@ -63,10 +63,69 @@
         }
     }
 
+    function popupAlert(message, options = {}) {
+        if (window.GSIPopup && typeof window.GSIPopup.alert === "function") {
+            return window.GSIPopup.alert({ message, ...options });
+        }
+        window.alert(message);
+        return Promise.resolve(true);
+    }
+
+    function popupConfirm(message, options = {}) {
+        if (window.GSIPopup && typeof window.GSIPopup.confirm === "function") {
+            return window.GSIPopup.confirm({ message, ...options });
+        }
+        return Promise.resolve(window.confirm(message));
+    }
+
+    function popupPrompt(message, options = {}) {
+        if (window.GSIPopup && typeof window.GSIPopup.prompt === "function") {
+            return window.GSIPopup.prompt({ message, ...options });
+        }
+        const value = window.prompt(message, options.defaultValue || "");
+        return Promise.resolve(value);
+    }
+
+    function imageStreamUrl(source, path) {
+        if (window.GSIImageViewer && typeof window.GSIImageViewer.buildStreamUrl === "function") {
+            return window.GSIImageViewer.buildStreamUrl(source, path);
+        }
+        const sourceKey = String(source || "").trim();
+        const relativePath = String(path || "").trim();
+        if (!sourceKey || !relativePath) return "";
+        return `/api/images/stream?source=${encodeURIComponent(sourceKey)}&path=${encodeURIComponent(relativePath)}`;
+    }
+
+    function openImageViewer(options = {}) {
+        if (window.GSIImageViewer) {
+            if (options && options.source && options.path && typeof window.GSIImageViewer.openFromStream === "function") {
+                window.GSIImageViewer.openFromStream(options);
+                return;
+            }
+            if (typeof window.GSIImageViewer.open === "function") {
+                window.GSIImageViewer.open(options);
+                return;
+            }
+        }
+        if (options && options.src) {
+            window.open(String(options.src), "_blank", "noopener,noreferrer");
+            return;
+        }
+        if (options && options.source && options.path) {
+            const url = imageStreamUrl(options.source, options.path);
+            if (url) window.open(url, "_blank", "noopener,noreferrer");
+        }
+    }
+
     window.GSICore = {
         csrfToken,
         apiJson,
         reportError,
+        popupAlert,
+        popupConfirm,
+        popupPrompt,
+        imageStreamUrl,
+        openImageViewer,
         isDebugEnabled() {
             return !!(window.GSIDebug && typeof window.GSIDebug.isEnabled === "function" && window.GSIDebug.isEnabled());
         },
