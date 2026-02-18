@@ -5,15 +5,16 @@ import re
 from pathlib import Path
 from typing import Any
 
-from gsi_enterprise.db import execute
+from gsi_enterprise.db import execute, fetch_one
 
 _ROOT_DIR = Path(__file__).resolve().parents[2]
 _ADDONS_APPS_DIR = _ROOT_DIR / "apps"
 _VALID_ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{1,63}$")
-_VALID_TYPE = "network_drive_connect"
+_VALID_TYPES = {"network_drive_connect", "change_database_compatibility"}
 _VALID_GROUP_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{1,63}$")
 _VALID_USER_RE = re.compile(r"^[A-Za-z0-9._\\\\-]{1,128}$")
 _UNC_PATH_RE = re.compile(r"^\\\\[^\\\/:*?\"<>|]+\\[^\\\/:*?\"<>|]+(?:\\[^:*?\"<>|]+)*$")
+_VALID_DB_NAME_RE = re.compile(r"^[A-Za-z0-9_ -]{1,128}$")
 
 
 def _safe_resolve(path_text: str) -> Path | None:
@@ -51,18 +52,29 @@ def _load_manifest(path: Path, default_group: str) -> dict[str, Any] | None:
     addon_type = str(payload.get("type", "")).strip().lower()
     if not _VALID_ID_RE.fullmatch(addon_id):
         return None
-    if addon_type != _VALID_TYPE:
-        return None
-
-    sql_connect_rel = str(payload.get("sql_connect", "")).strip()
-    if not sql_connect_rel:
-        return None
-    sql_connect = _safe_resolve(sql_connect_rel)
-    if not sql_connect:
+    if addon_type not in _VALID_TYPES:
         return None
 
     sql_disconnect_rel = str(payload.get("sql_disconnect", "")).strip()
     sql_disconnect = _safe_resolve(sql_disconnect_rel) if sql_disconnect_rel else None
+    sql_connect = None
+    sql_apply = None
+
+    if addon_type == "network_drive_connect":
+        sql_connect_rel = str(payload.get("sql_connect", "")).strip()
+        if not sql_connect_rel:
+            return None
+        sql_connect = _safe_resolve(sql_connect_rel)
+        if not sql_connect:
+            return None
+    elif addon_type == "change_database_compatibility":
+        sql_apply_rel = str(payload.get("sql_apply", "")).strip()
+        if not sql_apply_rel:
+            return None
+        sql_apply = _safe_resolve(sql_apply_rel)
+        if not sql_apply:
+            return None
+
     nav_group = _normalize_group_key(str(payload.get("nav_group", default_group or "extra_tools")))
     nav_group_label = str(payload.get("nav_group_label", "")).strip() or _humanize_group_key(nav_group)
 
@@ -73,8 +85,9 @@ def _load_manifest(path: Path, default_group: str) -> dict[str, Any] | None:
         "type": addon_type,
         "module_key": str(payload.get("module_key", "setup_tools")).strip() or "setup_tools",
         "category": str(payload.get("category", "Infrastructure")).strip() or "Infrastructure",
-        "sql_connect": str(sql_connect.relative_to(_ROOT_DIR)),
+        "sql_connect": (str(sql_connect.relative_to(_ROOT_DIR)) if sql_connect else ""),
         "sql_disconnect": (str(sql_disconnect.relative_to(_ROOT_DIR)) if sql_disconnect else ""),
+        "sql_apply": (str(sql_apply.relative_to(_ROOT_DIR)) if sql_apply else ""),
         "nav_group": nav_group,
         "nav_group_label": nav_group_label,
         "network_label": str(payload.get("network_label", "Network Drive")).strip() or "Network Drive",
@@ -142,6 +155,26 @@ def _read_sql(relative_path: str) -> str:
     return target.read_text(encoding="utf-8").strip()
 
 
+def _escape_bracket_identifier(value: str) -> str:
+    return value.replace("]", "]]")
+
+
+def _get_current_compatibility_level(database_name: str) -> int | None:
+    row = fetch_one(
+        "SELECT TOP 1 compatibility_level FROM sys.databases WHERE name = ?",
+        (database_name,),
+    )
+    if not row:
+        return None
+    value = row.get("compatibility_level")
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except Exception:
+        return None
+
+
 def execute_network_drive_connect(
     addon: dict[str, Any], *, username: str, password: str, drive_letter: str, network_target: str
 ) -> tuple[bool, str]:
@@ -193,3 +226,38 @@ def execute_network_drive_disconnect(addon: dict[str, Any], *, drive_letter: str
     final_sql = re.sub(rf"(?i)\b{re.escape(template_drive)}:", f"{drive_or_msg}:", final_sql)
     execute(final_sql)
     return True, "Network drive disconnect command executed."
+
+
+def execute_change_database_compatibility(
+    addon: dict[str, Any], *, database_name: str, compatibility_level: int
+) -> tuple[bool, str]:
+    db_name = database_name.strip()
+    if not _VALID_DB_NAME_RE.fullmatch(db_name):
+        return False, "Database name is invalid. Use letters, numbers, spaces, underscores, and dashes."
+
+    try:
+        compat = int(compatibility_level)
+    except Exception:
+        return False, "Compatibility level must be a number."
+
+    if compat < 130:
+        return False, "Compatibility level cannot be less than 130."
+    if compat > 999:
+        return False, "Compatibility level is out of range."
+
+    current_compat = _get_current_compatibility_level(db_name)
+    if current_compat is None:
+        return False, f"Database not found or compatibility level unavailable: {db_name}."
+    if compat < current_compat:
+        return (
+            False,
+            f"Compatibility level cannot be set below current level ({current_compat}) for {db_name}.",
+        )
+
+    sql_template = _read_sql(addon.get("sql_apply", ""))
+    final_sql = sql_template.format(
+        database_name=_escape_bracket_identifier(db_name),
+        compatibility_level=compat,
+    )
+    execute(final_sql)
+    return True, f"Database compatibility level updated to {compat} for {db_name}."

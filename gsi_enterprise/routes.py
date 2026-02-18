@@ -4,7 +4,7 @@ from io import BytesIO
 
 from flask import Blueprint, current_app, jsonify, render_template, request, send_file, session
 
-from gsi_enterprise.core.decorators import module_access_required
+from gsi_enterprise.core.decorators import login_required, module_access_required
 from gsi_enterprise.db import execute, fetch_all, fetch_one, get_db
 
 main_bp = Blueprint("main", __name__)
@@ -100,6 +100,35 @@ def api_map_overlays_active():
             )
         except Exception:
             return jsonify({"active_state_fips": [], "county_statuses": []})
+
+
+@main_bp.post("/api/debug/client-error")
+@login_required
+def api_debug_client_error():
+    payload = request.get_json(silent=True) or {}
+    error_type = str(payload.get("error_type", "ClientError")).strip() or "ClientError"
+    error_message = str(payload.get("error_message", "")).strip() or "Client-side error"
+    stack_trace = str(payload.get("stack_trace", "")).strip()
+    client_path = str(payload.get("path", "")).strip() or request.path
+    method = str(payload.get("method", "CLIENT")).strip() or "CLIENT"
+
+    execute(
+        """
+        INSERT INTO app_error_logs (request_id, path, method, error_type, error_message, stack_trace, user_id, ip_address)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            g.get("request_id", ""),
+            client_path[:512],
+            method[:16],
+            error_type[:200],
+            error_message,
+            stack_trace,
+            session.get("user_id"),
+            request.headers.get("X-Forwarded-For", request.remote_addr or "")[:64],
+        ),
+    )
+    return jsonify({"success": True})
 
 
 def _parse_bool(value: object, default: bool = False) -> bool:

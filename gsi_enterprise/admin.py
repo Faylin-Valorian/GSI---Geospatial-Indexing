@@ -13,6 +13,13 @@ def _json_payload() -> dict:
     return request.get_json(silent=True) or {}
 
 
+def _bool_setting(key: str, default: bool = False) -> bool:
+    row = fetch_one("SELECT value FROM app_settings WHERE [key] = ?", (key,))
+    if not row:
+        return default
+    return str(row.get("value", "")).strip() == "1"
+
+
 @admin_bp.get("")
 @admin_required
 def admin_dashboard():
@@ -228,6 +235,60 @@ def api_update_email_settings():
         target_type="app_setting",
         target_id="verification_from_email",
         details={"verification_from_email": verification_from_email},
+    )
+    return jsonify({"success": True})
+
+
+@admin_bp.get("/api/settings")
+@admin_required
+def api_admin_settings():
+    return jsonify(
+        {
+            "show_admin_properties": _bool_setting("show_admin_properties", default=False),
+            "debug_mode": _bool_setting("debug_mode", default=False),
+        }
+    )
+
+
+@admin_bp.post("/api/settings")
+@admin_required
+def api_update_admin_settings():
+    payload = _json_payload()
+    show_admin_properties = bool(payload.get("show_admin_properties", False))
+    debug_mode = bool(payload.get("debug_mode", False))
+
+    execute(
+        """
+        IF EXISTS (SELECT 1 FROM app_settings WHERE [key] = 'show_admin_properties')
+            UPDATE app_settings SET value = ? WHERE [key] = 'show_admin_properties'
+        ELSE
+            INSERT INTO app_settings ([key], value) VALUES ('show_admin_properties', ?)
+        """,
+        (
+            "1" if show_admin_properties else "0",
+            "1" if show_admin_properties else "0",
+        ),
+    )
+    execute(
+        """
+        IF EXISTS (SELECT 1 FROM app_settings WHERE [key] = 'debug_mode')
+            UPDATE app_settings SET value = ? WHERE [key] = 'debug_mode'
+        ELSE
+            INSERT INTO app_settings ([key], value) VALUES ('debug_mode', ?)
+        """,
+        (
+            "1" if debug_mode else "0",
+            "1" if debug_mode else "0",
+        ),
+    )
+    log_audit_event(
+        "admin_update_settings",
+        target_type="app_setting",
+        target_id="show_admin_properties,debug_mode",
+        details={
+            "show_admin_properties": show_admin_properties,
+            "debug_mode": debug_mode,
+        },
     )
     return jsonify({"success": True})
 

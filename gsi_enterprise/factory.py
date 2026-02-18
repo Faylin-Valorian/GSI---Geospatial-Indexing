@@ -122,6 +122,21 @@ def create_app() -> Flask:
 
     @app.context_processor
     def inject_user_context():
+        runtime_settings = {
+            "show_admin_properties": False,
+            "debug_mode": False,
+        }
+        try:
+            show_props = fetch_one("SELECT value FROM app_settings WHERE [key] = 'show_admin_properties'")
+            debug_mode = fetch_one("SELECT value FROM app_settings WHERE [key] = 'debug_mode'")
+            runtime_settings["show_admin_properties"] = bool(show_props and str(show_props.get("value", "")) == "1")
+            runtime_settings["debug_mode"] = bool(debug_mode and str(debug_mode.get("value", "")) == "1")
+        except Exception:
+            runtime_settings = {
+                "show_admin_properties": False,
+                "debug_mode": False,
+            }
+
         def can_access(module_key: str) -> bool:
             user = g.get("current_user")
             if not user:
@@ -132,6 +147,7 @@ def create_app() -> Flask:
             "current_user": g.get("current_user"),
             "csrf_token": get_csrf_token,
             "can_access": can_access,
+            "runtime_settings": runtime_settings,
         }
 
     @app.after_request
