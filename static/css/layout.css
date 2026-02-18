@@ -48,7 +48,7 @@ body {
 }
 
 .tab-nav {
-    min-height: 74px;
+    min-height: 180px;
     font-size: 0.69rem;
     font-weight: 700;
     text-transform: uppercase;

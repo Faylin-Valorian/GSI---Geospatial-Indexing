@@ -78,6 +78,7 @@
 
         document.querySelectorAll(".module-overlay").forEach((el) => el.classList.remove("open"));
         overlay.classList.add("open");
+        document.dispatchEvent(new CustomEvent("module:overlay-opened", { detail: { overlayId } }));
         activeOverlayId = overlayId;
         applyDockedBounds(overlay);
         applyMaximizedBounds(overlay);

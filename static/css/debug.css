@@ -1,0 +1,44 @@
+.debug-toast {
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    width: min(520px, calc(100vw - 28px));
+    z-index: 3000;
+    border: 1px solid #b03a3a;
+    border-radius: 10px;
+    background: #1c0f0f;
+    color: #ffd8d8;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    padding: 10px;
+}
+
+.debug-toast-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.debug-toast-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.debug-toast-body {
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 0.78rem;
+    white-space: pre-wrap;
+    max-height: 220px;
+    overflow: auto;
+    border: 1px solid rgba(255, 189, 189, 0.25);
+    border-radius: 6px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.debug-toast-actions {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}

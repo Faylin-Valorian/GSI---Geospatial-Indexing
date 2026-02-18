@@ -50,6 +50,12 @@
         },
     };
 
+    function reportDebug(error, context = {}) {
+        if (window.GSIDebug && typeof window.GSIDebug.reportError === "function") {
+            window.GSIDebug.reportError(error, context);
+        }
+    }
+
     function csrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute("content") || "" : "";
@@ -115,7 +121,9 @@
         try { data = await res.json(); } catch (_) {}
         if (!res.ok) {
             const msg = data && data.message ? data.message : `Request failed (${res.status})`;
-            throw new Error(msg);
+            const err = new Error(msg);
+            reportDebug(err, { source: "map_api", path: url, method: opts.method || "GET", status: res.status });
+            throw err;
         }
         return data || {};
     }
@@ -140,6 +148,14 @@
             map.removeLayer(countyOverlayLayer);
             countyOverlayLayer = null;
         }
+    }
+
+    function closeActiveCountyPopup() {
+        if (!map || !activeCountyPopup) return;
+        try {
+            map.closePopup(activeCountyPopup);
+        } catch (_) {}
+        activeCountyPopup = null;
     }
 
     function drawStateOverlays(features) {
@@ -479,6 +495,7 @@
             cachedCountyFeatures = countyFeatures;
             renderOverlayLayers();
         } catch (err) {
+            reportDebug(err, { source: "map_overlay_load" });
             console.warn("Map overlays failed to load.", err);
             removeOverlayLayers();
         }
@@ -498,6 +515,7 @@
             applyTheme(document.documentElement.getAttribute("data-bs-theme") || "dark");
             loadGeoOverlays();
             document.addEventListener("map:overlay-data-changed", loadGeoOverlays);
+            document.addEventListener("module:overlay-opened", closeActiveCountyPopup);
         },
         resize() {
             if (!map) return;

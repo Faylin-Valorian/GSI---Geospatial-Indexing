@@ -42,6 +42,13 @@
     gap: 8px;
 }
 
+.addons-item-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+    align-items: center;
+}
+
 .addons-item {
     border: 1px solid var(--border-color);
     border-radius: 10px;
@@ -49,6 +56,11 @@
     color: var(--text-main);
     text-align: left;
     padding: 10px;
+}
+
+.addons-item-actions {
+    display: inline-flex;
+    gap: 4px;
 }
 
 .addons-item:hover {

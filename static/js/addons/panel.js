@@ -1,4 +1,10 @@
 (function () {
+    function reportDebug(error, context = {}) {
+        if (window.GSIDebug && typeof window.GSIDebug.reportError === "function") {
+            window.GSIDebug.reportError(error, context);
+        }
+    }
+
     function csrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute("content") || "" : "";
@@ -15,7 +21,9 @@
             data = await res.json();
         } catch (_) {}
         if (!res.ok || data.success === false) {
-            throw new Error(data.message || `Request failed (${res.status})`);
+            const err = new Error(data.message || `Request failed (${res.status})`);
+            reportDebug(err, { source: "addons_api", path, method, status: res.status });
+            throw err;
         }
         return data;
     }
@@ -32,6 +40,7 @@
         apps: [],
         selectedAppId: null,
         activeGroup: "extra_tools",
+        canManageOrder: false,
     };
 
     const GROUP_LABELS = {
@@ -88,31 +97,42 @@
             return;
         }
 
-        list.innerHTML = state.apps.map((app) => `
-            <button type="button" class="addons-item ${app.id === state.selectedAppId ? "active" : ""}" data-addon-app-id="${esc(app.id)}">
-                <div class="fw-semibold">${esc(app.title)}</div>
-                <div class="small text-muted">${esc(app.category)} · ${esc(app.type)}</div>
-            </button>
-        `).join("");
+        list.innerHTML = state.apps.map((app, idx) => {
+            const controls = state.canManageOrder ? `
+                <div class="addons-item-actions">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-addon-move="up" data-addon-move-id="${esc(app.id)}" ${idx === 0 ? "disabled" : ""} title="Move up">
+                        <i class="bi bi-arrow-up"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-addon-move="down" data-addon-move-id="${esc(app.id)}" ${idx === state.apps.length - 1 ? "disabled" : ""} title="Move down">
+                        <i class="bi bi-arrow-down"></i>
+                    </button>
+                </div>
+            ` : "";
+            return `
+                <div class="addons-item-row">
+                    <button type="button" class="addons-item ${app.id === state.selectedAppId ? "active" : ""}" data-addon-app-id="${esc(app.id)}">
+                        <div class="fw-semibold">${esc(app.title)}</div>
+                    </button>
+                    ${controls}
+                </div>
+            `;
+        }).join("");
     }
 
     function renderHeader() {
         const app = selectedApp();
         const title = document.getElementById("addonAppTitle");
         const desc = document.getElementById("addonAppDescription");
-        const meta = document.getElementById("addonAppMeta");
-        if (!title || !desc || !meta) return;
+        if (!title || !desc) return;
 
         if (!app) {
             title.textContent = "Select an app";
             desc.textContent = "Choose an app from the list to configure and run.";
-            meta.textContent = "";
             return;
         }
 
         title.textContent = app.title;
         desc.textContent = app.description;
-        meta.textContent = `Group: ${currentGroupLabel()} · App ID: ${app.id} · Module key: ${app.module_key}`;
     }
 
     function renderNetworkDriveApp(app) {
@@ -194,6 +214,76 @@
         });
     }
 
+    function renderCompatibilityApp(app) {
+        const root = document.getElementById("addonAppWorkspace");
+        if (!root) return;
+        root.classList.remove("addons-empty-state");
+        const defaultDb = app.default_database_name || "";
+        const currentLevelRaw = Number(app.current_compatibility_level);
+        const hasCurrentLevel = Number.isFinite(currentLevelRaw) && currentLevelRaw > 0;
+        const minAllowedLevel = Math.max(130, hasCurrentLevel ? currentLevelRaw : 130);
+        const options = Array.isArray(app.compatibility_options) ? app.compatibility_options : [];
+        const fallbackOptions = [
+            { level: 130, sql_server_version: "SQL Server 2016" },
+            { level: 140, sql_server_version: "SQL Server 2017" },
+            { level: 150, sql_server_version: "SQL Server 2019" },
+            { level: 160, sql_server_version: "SQL Server 2022" },
+        ];
+        const sourceLevels = options.length ? options.slice() : fallbackOptions.slice();
+        if (hasCurrentLevel && !sourceLevels.find((x) => Number(x.level) === currentLevelRaw)) {
+            sourceLevels.push({ level: currentLevelRaw, sql_server_version: "Current Database Level" });
+        }
+        const levels = sourceLevels
+            .filter((x) => Number(x.level) >= minAllowedLevel)
+            .sort((a, b) => Number(a.level) - Number(b.level));
+        const defaultSelectedLevel = hasCurrentLevel ? currentLevelRaw : 130;
+
+        root.innerHTML = `
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label" for="compatibilityDatabaseName">Database Name</label>
+                    <input id="compatibilityDatabaseName" class="form-control" value="${esc(defaultDb)}" placeholder="GSIEnterprise">
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="compatibilityLevelSelect">Compatibility Level</label>
+                    <select id="compatibilityLevelSelect" class="form-select">
+                        ${levels.map((entry) => {
+                            const level = Number(entry.level);
+                            const version = String(entry.sql_server_version || "").trim();
+                            return `<option value="${level}" ${level === defaultSelectedLevel ? "selected" : ""}>${level}${version ? ` - ${esc(version)}` : ""}</option>`;
+                        }).join("")}
+                    </select>
+                    <div class="form-text">Minimum supported compatibility level is 130. You cannot select below the database's current compatibility level.</div>
+                </div>
+                <div class="col-12 d-flex flex-wrap gap-2">
+                    <button id="compatibilityApplyBtn" class="btn btn-primary" type="button">
+                        <i class="bi bi-sliders me-1"></i>Apply Compatibility
+                    </button>
+                </div>
+            </div>
+        `;
+
+        const applyBtn = document.getElementById("compatibilityApplyBtn");
+        const dbInput = document.getElementById("compatibilityDatabaseName");
+        const levelSelect = document.getElementById("compatibilityLevelSelect");
+        if (!applyBtn || !dbInput || !levelSelect) return;
+
+        applyBtn.addEventListener("click", async () => {
+            applyBtn.disabled = true;
+            try {
+                const payload = await api(`/api/addons/apps/${encodeURIComponent(app.id)}/change-compatibility`, "POST", {
+                    database_name: dbInput.value.trim(),
+                    compatibility_level: Number(levelSelect.value),
+                });
+                setBanner(payload.message || "Compatibility updated.", "success");
+            } catch (err) {
+                setBanner(err.message, "danger");
+            } finally {
+                applyBtn.disabled = false;
+            }
+        });
+    }
+
     function renderAppWorkspace() {
         const app = selectedApp();
         const root = document.getElementById("addonAppWorkspace");
@@ -208,6 +298,10 @@
             renderNetworkDriveApp(app);
             return;
         }
+        if (app.type === "change_database_compatibility") {
+            renderCompatibilityApp(app);
+            return;
+        }
 
         root.className = "addons-meta-card addons-empty-state";
         root.textContent = `Unsupported app type: ${app.type}`;
@@ -217,6 +311,37 @@
         renderAppsList();
         renderHeader();
         renderAppWorkspace();
+    }
+
+    async function persistCurrentGroupOrder() {
+        if (!state.canManageOrder) return;
+        const orderedIds = state.apps.map((app) => app.id);
+        await api("/api/addons/apps/order", "POST", {
+            group: state.activeGroup,
+            app_ids: orderedIds,
+        });
+    }
+
+    function moveApp(appId, direction) {
+        if (!state.canManageOrder) return;
+        const idx = state.apps.findIndex((a) => a.id === appId);
+        if (idx < 0) return;
+        const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+        if (targetIdx < 0 || targetIdx >= state.apps.length) return;
+
+        const nextApps = state.apps.slice();
+        const temp = nextApps[idx];
+        nextApps[idx] = nextApps[targetIdx];
+        nextApps[targetIdx] = temp;
+        state.apps = nextApps;
+
+        const queue = nextApps.slice();
+        state.allApps = state.allApps.map((app) =>
+            normalizeGroup(app.nav_group) === state.activeGroup ? queue.shift() || app : app
+        );
+
+        renderAll();
+        persistCurrentGroupOrder().catch((err) => setBanner(err.message, "danger"));
     }
 
     function selectApp(id) {
@@ -235,6 +360,7 @@
 
     async function loadApps() {
         const payload = await api("/api/addons/apps");
+        state.canManageOrder = Boolean(payload.can_manage_order);
         state.allApps = payload.apps || [];
         applyActiveGroup(state.activeGroup);
     }
@@ -243,6 +369,15 @@
         const list = document.getElementById("addonAppsList");
         if (list) {
             list.addEventListener("click", (event) => {
+                const moveBtn = event.target.closest("[data-addon-move]");
+                if (moveBtn) {
+                    event.preventDefault();
+                    moveApp(
+                        moveBtn.getAttribute("data-addon-move-id"),
+                        moveBtn.getAttribute("data-addon-move")
+                    );
+                    return;
+                }
                 const btn = event.target.closest("[data-addon-app-id]");
                 if (!btn) return;
                 selectApp(btn.getAttribute("data-addon-app-id"));
@@ -275,6 +410,15 @@
             document.addEventListener("addons:open-group", (event) => {
                 const group = event && event.detail ? event.detail.group : "extra_tools";
                 applyActiveGroup(group);
+            });
+            document.addEventListener("runtime:settings-changed", () => {
+                loadApps().catch((err) => {
+                    const root = document.getElementById("addonAppWorkspace");
+                    if (root) {
+                        root.className = "addons-meta-card addons-empty-state";
+                        root.textContent = `Failed to load apps: ${err.message}`;
+                    }
+                });
             });
             loadApps().catch((err) => {
                 const root = document.getElementById("addonAppWorkspace");

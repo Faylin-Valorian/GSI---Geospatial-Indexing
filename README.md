@@ -73,8 +73,9 @@ python app.py
   - `apps/<tool_group>/<app_folder>/addon.json`
 - If an app folder is removed, it disappears from the UI.
 - If an app folder is added, it appears after clicking Refresh in the Add-on Apps panel.
-- First implemented app:
+- Implemented apps:
   - `Connect to Network Drive` using `db/modules/network_drive_connect/queries/*`
+  - `Change Database Compatibility` using `db/modules/database_compatibility/queries/AlterKRSCompatibilityLevel.sql`
 
 ## Secure image strategy
 

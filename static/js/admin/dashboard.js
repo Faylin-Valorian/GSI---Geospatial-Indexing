@@ -1,6 +1,12 @@
 (function () {
     let geoStatesCache = [];
 
+    function reportDebug(error, context = {}) {
+        if (window.GSIDebug && typeof window.GSIDebug.reportError === "function") {
+            window.GSIDebug.reportError(error, context);
+        }
+    }
+
     function csrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute("content") || "" : "";
@@ -19,6 +25,7 @@
                 const data = await res.json();
                 if (data.message) msg = data.message;
             } catch (_) {}
+            reportDebug(new Error(msg), { source: "admin_api", path, method, status: res.status });
             throw new Error(msg);
         }
         return res.json();
@@ -79,6 +86,18 @@
             status.textContent = payload.verification_from_email
                 ? `Current sender: ${payload.verification_from_email}`
                 : "No sender override set. Falls back to SMTP_FROM configuration.";
+        }
+    }
+
+    async function loadAdminSettings() {
+        const payload = await api("/admin/api/settings");
+        const showAdminPropertiesToggle = document.getElementById("showAdminPropertiesToggle");
+        const debugModeToggle = document.getElementById("debugModeToggle");
+        const status = document.getElementById("adminSettingsStatus");
+        if (showAdminPropertiesToggle) showAdminPropertiesToggle.checked = !!payload.show_admin_properties;
+        if (debugModeToggle) debugModeToggle.checked = !!payload.debug_mode;
+        if (status) {
+            status.textContent = "Settings loaded.";
         }
     }
 
@@ -195,6 +214,7 @@
             loadUsers(),
             loadDomains(),
             loadEmailSettings(),
+            loadAdminSettings(),
             loadImageSources(),
             loadAccessControls(),
             loadUserAccessOverrides(),
@@ -395,6 +415,39 @@
         const geoCountyFilterBtn = document.getElementById("geoCountyFilterBtn");
         if (geoCountyFilterBtn) {
             geoCountyFilterBtn.dataset.action = "geo-county-filter";
+        }
+
+        const saveAdminSettingsBtn = document.getElementById("saveAdminSettingsBtn");
+        if (saveAdminSettingsBtn) {
+            saveAdminSettingsBtn.addEventListener("click", async () => {
+                const showAdminPropertiesToggle = document.getElementById("showAdminPropertiesToggle");
+                const debugModeToggle = document.getElementById("debugModeToggle");
+                const status = document.getElementById("adminSettingsStatus");
+                if (!showAdminPropertiesToggle || !debugModeToggle) return;
+                saveAdminSettingsBtn.disabled = true;
+                try {
+                    await api("/admin/api/settings", "POST", {
+                        show_admin_properties: showAdminPropertiesToggle.checked,
+                        debug_mode: debugModeToggle.checked,
+                    });
+                    if (window.GSIDebug && typeof window.GSIDebug.setEnabled === "function") {
+                        window.GSIDebug.setEnabled(debugModeToggle.checked);
+                    }
+                    document.dispatchEvent(
+                        new CustomEvent("runtime:settings-changed", {
+                            detail: {
+                                show_admin_properties: showAdminPropertiesToggle.checked,
+                                debug_mode: debugModeToggle.checked,
+                            },
+                        })
+                    );
+                    if (status) status.textContent = "Settings saved.";
+                } catch (err) {
+                    if (status) status.textContent = err.message;
+                } finally {
+                    saveAdminSettingsBtn.disabled = false;
+                }
+            });
         }
 
     }

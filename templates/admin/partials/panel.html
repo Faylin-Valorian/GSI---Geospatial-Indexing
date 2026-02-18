@@ -24,6 +24,7 @@
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-images" type="button">Image Sources</button>
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-geography" type="button">Geography</button>
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-access" type="button">Access Controls</button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button">Settings</button>
     </div>
 
     <div class="tab-content admin-content flex-grow-1 overflow-auto">
@@ -233,6 +234,24 @@
                     </thead>
                     <tbody id="userAccessOverridesBody"></tbody>
                 </table>
+            </div>
+        </section>
+
+        <section id="tab-settings" class="tab-pane fade">
+            <div class="admin-card">
+                <h6 class="mb-2">Admin UI Settings</h6>
+                <p class="small text-muted mb-3">Control developer/admin-only UI features and live debug behavior.</p>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="showAdminPropertiesToggle">
+                    <label class="form-check-label" for="showAdminPropertiesToggle">Show admin properties</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="debugModeToggle">
+                    <label class="form-check-label" for="debugModeToggle">Enable debug popups</label>
+                </div>
+                <div class="small text-muted mb-3">Client errors are always written to <code>app_error_logs</code>. Debug mode only controls popup visibility.</div>
+                <button id="saveAdminSettingsBtn" class="btn btn-primary" type="button">Save Settings</button>
+                <div id="adminSettingsStatus" class="small text-muted mt-2"></div>
             </div>
         </section>
     </div>
